@@ -1,6 +1,8 @@
 var map;
 var markers = [];
 var infoWindow;
+var service;
+var currentCoords = { };
 
 function displayLocation(position) {
 
@@ -13,7 +15,47 @@ pLocation.innerHTML += latitude + ", " + longitude + "<br>";
 
 }
 
+function makePlacesRequest(lat, lng) {
+	console.log(lat);
+	console.log(lng);
+	var query = document.getElementById("query").value;
+	if(query) {
+		console.log("got an entry");
+		var placesRequest = {
+			location: new google.maps.LatLng(lat, lng),
+			radius: 1000,
+			keywork: query
+		};
+		service.nearbySearch(placesRequest, function(results, status) {
+			if( status == google.maps.places.PlacesServiceStatus.OK) {
+				results.forEach(function(place) {
+					console.log(place);
+					createMarker(place);
+				});
+			}
+		});
+	} else {
+		console.log("No entyr");
+	}
+
+
+}
+
+function showForm() {
+
+	var searchForm = document.getElementById("search");
+	var button = document.querySelector("button");
+	button.onclick = function(e) {
+		e.preventDefault();
+		makePlacesRequest(currentCoords.latitude, currentCoords.longitude);
+		console.log("clicked the search button");
+	};
+
+}
+
 function showMaps(coords) {
+	currentCoords.latitude = coords.latitude;
+	currentCoords.longitude = coords.longitude;
 
 	var googleLatLong = new google.maps.LatLng(coords.latitude, coords.longitude);
 	var mapOptions = {
@@ -22,16 +64,19 @@ function showMaps(coords) {
 		mapTypeId: google.maps.MapTypeId.TERRAIN
 	};
 	var mapDiv = document.getElementById("map");
-	var map = new google.maps.Map(mapDiv, mapOptions);
+	map = new google.maps.Map(mapDiv, mapOptions);
+	service = new google.maps.places.PlacesService(map);
 	infoWindow = new google.maps.InfoWindow();
 	google.maps.event.addListener(map, "click", function(event) {
 		var latitude = event.latLng.lat();
 		var longitude = event.latLng.lng();
+		currentCoords.latitude = latitude;
+		currentCoords.longitude = longitude;
 		var pLocation = document.getElementById("location");
 		pLocation.innerHTML = latitude + ", " + longitude;
 		map.panTo(event.latLng);
 		var image = "http://www.uidownload.com/files/648/285/119/american-express-logo-icon.png";
-		var markerOptions = {
+		/*var markerOptions = {
 			position: event.latLng,
 			map: map,
 			animation: google.maps.Animation.DROP,
@@ -43,8 +88,30 @@ function showMaps(coords) {
 		google.maps.event.addListener(marker, "click", function(event) {
 			infoWindow.setContent("AMEX Discount of 5% for EveryPurchase");
 			infoWindow.open(map, marker);
-		});
+		});*/
 	});
+	showForm();
+
+}
+
+function createMarker(place) {
+	var markerOptions = {
+		position: place.geometry.location,	
+		map: map,
+		clickable: true
+	};
+	var marker = new google.maps.Marker(markerOptions);
+	markers.push(marker);
+	google.maps.event.addListener(marker, "click", function(place, marker) {
+		return function() {
+			if(place.vicinity) {
+				infoWindow.setContent(place.name + "<br>" + place.vicinity);
+			} else {
+				infoWindow.setContent(place.name);
+			}
+			infoWindow.open(map, marker);
+		};
+		}(place, marker));
 
 }
 
