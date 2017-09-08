@@ -3,15 +3,17 @@ var markers = [];
 var infoWindow;
 var service;
 var currentCoords = { };
+var geocoder;
 
 function displayLocation(position) {
 
-var latitude = position.coords.latitude;
-var longitude = position.coords.longitude;
+/*var latitude = 40.730610;/*position.coords.latitude;*/
+/*var longitude = -73.935242;/*position.coords.longitude;*/
+
 
 var pLocation = document.getElementById("location");
-pLocation.innerHTML += latitude + ", " + longitude + "<br>";
-	showMaps(position.coords);
+/*pLocation.innerHTML += latitude + ", " + longitude + "<br>";*/
+	//showMaps(position.coords);
 
 }
 
@@ -24,7 +26,7 @@ function makePlacesRequest(lat, lng) {
 		var placesRequest = {
 			location: new google.maps.LatLng(lat, lng),
 			radius: 1000,
-			keywork: query
+			keyword: query
 		};
 		service.nearbySearch(placesRequest, function(results, status) {
 			if( status == google.maps.places.PlacesServiceStatus.OK) {
@@ -53,11 +55,7 @@ function showForm() {
 
 }
 
-function showMaps(coords) {
-	currentCoords.latitude = coords.latitude;
-	currentCoords.longitude = coords.longitude;
-
-	var googleLatLong = new google.maps.LatLng(coords.latitude, coords.longitude);
+function showMaps() {
 	var mapOptions = {
 		zoom: 11,
 		center: googleLatLong,
@@ -65,8 +63,32 @@ function showMaps(coords) {
 	};
 	var mapDiv = document.getElementById("map");
 	map = new google.maps.Map(mapDiv, mapOptions);
+/*	currentCoords.latitude = coords.latitude;
+	currentCoords.longitude = coords.longitude;*/
+	
+	/*coords.latitude = 40.730610;
+	coords.longitude = -73.935242;*/
+	geocoder = new google.maps.Geocoder();
+	var address = "Phoenix";
+	geocoder.geocode({'address': address}, function(results, status) {
+		if (status === 'OK') {
+			map.setCenter(results[0].geometry.location);
+	currentCoords.latitude = map.getCenter().lat();
+	currentCoords.longitude = map.getCenter().lng();
+
+			console.log(map.getCenter().lat());
+			console.log(map.getCenter().lng());
+		}
+	});
+
+
+	var googleLatLong = new google.maps.LatLng(currentCoords.latitude, currentCoords.longitude);
+
 	service = new google.maps.places.PlacesService(map);
 	infoWindow = new google.maps.InfoWindow();
+
+
+
 	google.maps.event.addListener(map, "click", function(event) {
 		var latitude = event.latLng.lat();
 		var longitude = event.latLng.lng();
@@ -98,6 +120,7 @@ function createMarker(place) {
 	var markerOptions = {
 		position: place.geometry.location,	
 		map: map,
+		icon: "https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png",
 		clickable: true
 	};
 	var marker = new google.maps.Marker(markerOptions);
@@ -116,14 +139,17 @@ function createMarker(place) {
 }
 
 
+
+
 window.onload = function() {
 
-if(navigator.geolocation) {
+/*if(navigator.geolocation) {
 
 	navigator.geolocation.getCurrentPosition(displayLocation);
 } else {
 
 alert("Ok .. some error");
-}
+}*/
+	showMaps();
 }
 
